@@ -25,3 +25,29 @@ def installed_apps(software):
             print(f"- {values.get('DisplayName')} "               
                   f"| Version: {values.get('DisplayVersion')} "  
                   f"| Publisher: {values.get('Publisher')}")     
+
+def user_accounts(sam):
+    print("\n=== USER ACCOUNTS ===")             
+    key = sam.open(r"SAM\Domains\Account\Users\Names")       # Registry path to local users
+    for sub in key.subkeys():                                # Loop through usernames
+        print(f"- Username: {sub.name()} "                   # Print username
+              f"| LastWrite: {ts(sub.timestamp())}")         # Last modification time
+
+def usb_history(system):
+    print("\n=== USB HISTORY ===")                
+    select = system.open("Select").value("Current").value()       # Identify current control set
+    cs = f"ControlSet00{select}"                                  # Format control set name           
+    for p in [rf"{cs}\Enum\USBSTOR", rf"{cs}\Enum\USB"]:          # USB connection registry paths
+        key = system.open(p)                                      # Open USB registry key
+        for dev in key.subkeys():                                 # Loop USB device classes
+            for inst in dev.subkeys():                            # Loop device instances
+                print(f"- Device ID: {inst.name()} "              # Print device instance ID (serial)
+                      f"| LastWrite: {ts(inst.timestamp())}")     # Timestamp last seen
+
+def main():     
+    installed_apps(Registry.Registry(SOFTWARE_HIVE))  
+    user_accounts(Registry.Registry(SAM_HIVE))        
+    usb_history(Registry.Registry(SYSTEM_HIVE))      
+
+if __name__ == "__main__":
+    main()                                        
